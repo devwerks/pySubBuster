@@ -3,6 +3,7 @@ import os
 import getopt
 from bs4 import BeautifulSoup
 import re
+from dns import resolver, zone, query
 
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir))
 
@@ -31,6 +32,15 @@ It is the end user's responsibility to obey all applicable local, state and fede
 Developers assume no liability and are not responsible for any misuse or damage caused by this program
 
 """
+
+
+def query_dns(url):
+    resolver_ = resolver.Resolver()
+    for qtype in 'A', 'AAAA', 'MX', 'TXT', 'SOA', 'NS':
+        answer = resolver.query("devwerks.net", qtype, raise_on_no_answer=False)
+        if answer.rrset is not None:
+            output = GREEN + "%s \n" % (answer.rrset) + RESET
+            sys.stdout.write(output)
 
 
 def google_dork(url):
@@ -62,9 +72,11 @@ def scan():
             url = arg
 
     try:
+        sys.stdout.write("DNS Info\n")
+        query_dns(url)
         sys.stdout.write("Discover subdomains in Google\n")
         google_dork(url)
-        sys.stdout.write("Bruteforcing subdomains\n")
+        sys.stdout.write("Brute-forcing subdomains\n")
         sub_brute = SubBrute(url.replace("http://", "http://{fuzz}."), BASE_DIR + "/wordlists/" + "sub.txt")
         sub_brute.brute_all()
 
