@@ -1,5 +1,5 @@
 # pySubBuster
-Open source tool for subdomain enumeration.
+Python tool for subdomain enumeration.
 
 ### Features:
 - Google dorking
