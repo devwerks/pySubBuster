@@ -5,7 +5,8 @@ from utils.colors import *
 
 class RequestHandler:
 
-    def __init__(self, timeout=200):
+    def __init__(self, head=False, timeout=200):
+        self.head = head
         self.timeout = timeout
         self.pError = False
 
@@ -16,6 +17,8 @@ class RequestHandler:
     def send(self, url):
         try:
             req = urllib2.Request(url)
+            if self.head:
+                req.get_method = lambda: "HEAD"
             req.add_header("User-agent",
                        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.11; rv:46.0) Gecko/20100101 Firefox/46.0")
             response = urllib2.urlopen(req, timeout=self.timeout)

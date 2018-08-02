@@ -27,7 +27,7 @@ class SubBrute:
             return newurl
 
     def request(self, url):
-        request_handler = RequestHandler()
+        request_handler = RequestHandler(head=True)
         data = request_handler.send(url)
         if data:
             output = GREEN + "%s\n" % url.replace("http://", "") + RESET
