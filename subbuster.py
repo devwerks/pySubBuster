@@ -35,9 +35,8 @@ Developers assume no liability and are not responsible for any misuse or damage 
 
 
 def query_dns(url):
-    resolver_ = resolver.Resolver()
     for qtype in 'A', 'AAAA', 'MX', 'TXT', 'SOA', 'NS':
-        answer = resolver.query("devwerks.net", qtype, raise_on_no_answer=False)
+        answer = resolver.query(url.replace("http://", ""), qtype, raise_on_no_answer=False)
         if answer.rrset is not None:
             output = GREEN + "%s \n" % (answer.rrset) + RESET
             sys.stdout.write(output)
@@ -45,7 +44,18 @@ def query_dns(url):
 
 def google_dork(url):
     request_handler = RequestHandler()
-    data = request_handler.send("https://www.google.com/search?q=site:%s&num=100" % url)
+    data = request_handler.send("https://www.google.com/search?q=site:%s&num=100" % url.replace("http://", ""))
+    soup = BeautifulSoup(data, "lxml")
+    results = set(re.findall(r"\w+\.{}".format(url.replace("http://", "")), soup.text))
+    for subdomain in results:
+        if "www." not in subdomain:
+            output = GREEN + "%s \n" % (subdomain) + RESET
+            sys.stdout.write(output)
+
+
+def virustotal_dork(url):
+    request_handler = RequestHandler()
+    data = request_handler.send("https://www.virustotal.com/en/domain/%s/information/" % url.replace("http://", ""))
     soup = BeautifulSoup(data, "lxml")
     results = set(re.findall(r"\w+\.{}".format(url.replace("http://", "")), soup.text))
     for subdomain in results:
@@ -76,6 +86,8 @@ def scan():
         query_dns(url)
         sys.stdout.write("Discover subdomains in Google\n")
         google_dork(url)
+        sys.stdout.write("Discover subdomains in virustotal\n")
+        virustotal_dork(url)
         sys.stdout.write("Brute-forcing subdomains\n")
         sub_brute = SubBrute(url.replace("http://", "http://{fuzz}."), BASE_DIR + "/wordlists/" + "sub.txt")
         sub_brute.brute_all()

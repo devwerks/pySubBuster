@@ -2,7 +2,8 @@
 Python tool for subdomain enumeration.
 
 ### Features:
-- Google dorking
+- Google
+- Virustotal
 - Bruteforce
 
 ### Usage:
