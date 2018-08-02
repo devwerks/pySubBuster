@@ -1,4 +1,4 @@
-# pySubBuster
+# pySubBuster [![Build Status](https://travis-ci.org/devwerks/pySubBuster.svg?branch=master)](https://travis-ci.org/devwerks/pySubBuster)
 Python tool for subdomain enumeration.
 
 ### Features:
