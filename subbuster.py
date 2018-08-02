@@ -23,7 +23,7 @@ banner = """
  | |     __/ |                                                
  |_|    |___/                                              0.1  
 
-Open source tool for subdomain enumeration
+Python tool for subdomain enumeration
 
 Author: Johannes Schroeter - www.devwerks.net
 
@@ -93,7 +93,7 @@ def version():
 
 def help():
     sys.stdout.write("subbuster.py -u/--url URL\n")
-    sys.stdout.write("Example: subbuster.py -u http://test.net/\n")
+    sys.stdout.write("Example: subbuster.py -u http://test.net/\n\n")
 
 
 def main():

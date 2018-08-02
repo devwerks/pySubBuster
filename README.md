@@ -27,7 +27,7 @@ http://devwerks.net
  | |     __/ |                                                
  |_|    |___/                                              0.1  
 
-Open source tool for subdomain enumeration
+Python tool for subdomain enumeration
 
 Author: Johannes Schroeter - www.devwerks.net
 
