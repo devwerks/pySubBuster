@@ -2,7 +2,7 @@ import sys
 import threading
 from utils.colors import *
 from utils.request_handler import RequestHandler
-
+from utils.progress_bar import ProgressBar
 
 class SubBrute:
 
@@ -19,17 +19,6 @@ class SubBrute:
         errorstring = RED + "%s" % string + " (error: %s)\n" % error + RESET
         sys.stdout.write(errorstring)
 
-    def progress(self, count, total, status=''):
-        bar_len = 60
-        filled_len = int(round(bar_len * count / float(total)))
-
-        percents = round(100.0 * count / float(total), 1)
-        bar = '=' * filled_len + '-' * (bar_len - filled_len)
-
-        sys.stdout.write('[%s] %s%s ...%s\r' % (bar, percents, '%', status))
-
-        sys.stdout.flush()
-
     def createurl(self, url, word):
         if url.find("{fuzz}") != -1:
             return url.replace("{fuzz}", word)
@@ -41,7 +30,7 @@ class SubBrute:
         request_handler = RequestHandler()
         data = request_handler.send(url)
         if data:
-            output = GREEN + "%s\n" % url + RESET
+            output = GREEN + "%s\n" % url.replace("http://", "") + RESET
             self.sublist.append(output)
 
     def brute_all(self):
@@ -59,8 +48,9 @@ class SubBrute:
                 else:
                     self.request(newurl)
                 count += 1
-                self.progress(count, num_lines, status='Brute-forcing')
-            sys.stdout.write('\n# Wait for all threads to finish\n')
+                progressBar = ProgressBar()
+                progressBar.progress(count, num_lines, status='Brute-forcing')
+            sys.stdout.write('\n- Wait for all threads to finish\n')
             for x in threads:
                 x.join()
-            sys.stdout.write(''.join(map(str, self.sublist)))
+            return self.sublist

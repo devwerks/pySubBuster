@@ -3,11 +3,10 @@ import os
 import getopt
 from bs4 import BeautifulSoup
 import re
-from dns import resolver, zone, query
-
-sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir))
+from dns import resolver
 
 from utils.colors import *
+from utils.progress_bar import ProgressBar
 from utils.request_handler import RequestHandler
 from lib.brute import SubBrute
 
@@ -34,6 +33,19 @@ Developers assume no liability and are not responsible for any misuse or damage 
 """
 
 
+def uniquify(seq, idfun=None):
+    if idfun is None:
+        def idfun(x): return x
+    seen = {}
+    result = []
+    for item in seq:
+         marker = idfun(item)
+         if marker in seen: continue
+         seen[marker] = 1
+         result.append(item)
+    return result
+
+
 def query_dns(url):
     for qtype in 'A', 'AAAA', 'MX', 'TXT', 'SOA', 'NS':
         answer = resolver.query(url.replace("http://", ""), qtype, raise_on_no_answer=False)
@@ -42,26 +54,29 @@ def query_dns(url):
             sys.stdout.write(output)
 
 
-def google_dork(url):
-    request_handler = RequestHandler()
-    data = request_handler.send("https://www.google.com/search?q=site:%s&num=100" % url.replace("http://", ""))
-    soup = BeautifulSoup(data, "lxml")
-    results = set(re.findall(r"\w+\.{}".format(url.replace("http://", "")), soup.text))
-    for subdomain in results:
-        if "www." not in subdomain:
-            output = GREEN + "%s \n" % (subdomain) + RESET
-            sys.stdout.write(output)
+def query_search(url):
 
+    sublist = []
+    engine_urls = ['https://www.virustotal.com/en/domain/%s/information/',
+                   'https://www.google.com/search?q=site:%s&num=100',
+                   'https://search.yahoo.com/search?p=%s&b=1']
 
-def virustotal_dork(url):
-    request_handler = RequestHandler()
-    data = request_handler.send("https://www.virustotal.com/en/domain/%s/information/" % url.replace("http://", ""))
-    soup = BeautifulSoup(data, "lxml")
-    results = set(re.findall(r"\w+\.{}".format(url.replace("http://", "")), soup.text))
-    for subdomain in results:
-        if "www." not in subdomain:
-            output = GREEN + "%s \n" % (subdomain) + RESET
-            sys.stdout.write(output)
+    i = 0
+    for engine in engine_urls:
+        request_handler = RequestHandler()
+        data = request_handler.send(engine % url.replace("http://", ""))
+        if data == 'None':
+            return None
+        soup = BeautifulSoup(data, "lxml")
+        results = set(re.findall(r"\w+\.{}".format(url.replace("http://", "")), soup.text))
+        for subdomain in results:
+            if "www." not in subdomain:
+                output = GREEN + "%s\n" % (subdomain) + RESET
+                sublist.append(output)
+        i += 1
+        progressBar = ProgressBar()
+        progressBar.progress(i, len(engine_urls), status='Searching')
+    return sublist
 
 
 def scan():
@@ -82,16 +97,19 @@ def scan():
             url = arg
 
     try:
-        sys.stdout.write("DNS Info\n")
+        list = []
+        sys.stdout.write("- DNS Info\n")
         query_dns(url)
-        sys.stdout.write("Discover subdomains in Google\n")
-        google_dork(url)
-        sys.stdout.write("Discover subdomains in virustotal\n")
-        virustotal_dork(url)
-        sys.stdout.write("Brute-forcing subdomains\n")
+        sys.stdout.write("- Discover subdomains with search engines\n")
+        list = query_search(url)
+        sys.stdout.write("\n- Brute-forcing subdomains\n")
         sub_brute = SubBrute(url.replace("http://", "http://{fuzz}."), BASE_DIR + "/wordlists/" + "sub.txt")
-        sub_brute.brute_all()
-
+        list += sub_brute.brute_all()
+        # uniquify the list
+        uniquelist = uniquify(list)
+        sys.stdout.write("- Unique Subdomains: %s\n" % len(uniquelist))
+        # print list of subdomains
+        sys.stdout.write(''.join(map(str, uniquelist)))
     except KeyboardInterrupt:
         sys.stdout.write(RED)
         sys.stdout.write("Keyboard Interrupt detected. Exiting\n")
